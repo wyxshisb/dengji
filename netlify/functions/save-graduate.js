@@ -84,6 +84,14 @@ exports.handler = async (event) => {
       formData.securityAnswer
     ];
 
+    // 在连接池初始化后添加
+try {
+  const url = new URL(process.env.NETLIFY_DATABASE_URL);
+  console.log('数据库用户名:', url.username); // 必须显示 'neon'，而非 'username'
+} catch (e) {
+  console.error('连接字符串格式错误:', e);
+}
+    
     // SQL插入语句
     const query = `
       INSERT INTO graduates (
@@ -117,12 +125,5 @@ exports.handler = async (event) => {
     };
   }
 };
-// 在连接池初始化后添加
-try {
-  const url = new URL(process.env.NETLIFY_DATABASE_URL);
-  console.log('数据库用户名:', url.username); // 必须显示 'neon'，而非 'username'
-} catch (e) {
-  console.error('连接字符串格式错误:', e);
-}
 
     
