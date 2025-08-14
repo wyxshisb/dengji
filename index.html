@@ -1,0 +1,924 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>毕业生去向追踪</title>
+    <!-- 引入Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入Font Awesome -->
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <!-- 引入Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js"></script>
+    <!-- 引入CryptoJS用于数据加密 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    
+    <!-- Tailwind配置 -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3B82F6',
+                        secondary: '#10B981',
+                        accent: '#8B5CF6',
+                        dark: '#1E293B',
+                        light: '#F8FAFC'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .text-shadow {
+                text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            }
+            .transition-custom {
+                transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            }
+            .card-hover {
+                @apply hover:shadow-lg hover:-translate-y-1 transition-all duration-300;
+            }
+            .btn-primary {
+                @apply bg-primary text-white font-medium py-2 px-6 rounded-lg shadow-md hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all duration-300;
+            }
+            .btn-secondary {
+                @apply bg-secondary text-white font-medium py-2 px-6 rounded-lg shadow-md hover:bg-secondary/90 focus:outline-none focus:ring-2 focus:ring-secondary/50 transition-all duration-300;
+            }
+            .input-field {
+                @apply w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-300;
+            }
+            .form-label {
+                @apply block text-sm font-medium text-gray-700 mb-1;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-light to-blue-50 min-h-screen font-sans text-dark">
+    <!-- 顶部导航 -->
+    <nav class="bg-white/80 backdrop-blur-md shadow-sm fixed w-full z-10 transition-all duration-300">
+        <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+                <i class="fa fa-graduation-cap text-primary text-2xl"></i>
+                <span class="text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">毕业生去向追踪</span>
+            </div>
+            <div class="hidden md:flex items-center space-x-6">
+                <a href="#" id="nav-home" class="text-gray-600 hover:text-primary transition-colors">首页</a>
+                <a href="#" id="nav-about" class="text-gray-600 hover:text-primary transition-colors">关于</a>
+                <a href="#" id="nav-help" class="text-gray-600 hover:text-primary transition-colors">帮助</a>
+            </div>
+            <button class="md:hidden text-gray-600 hover:text-primary" id="mobile-menu-button">
+                <i class="fa fa-bars text-xl"></i>
+            </button>
+        </div>
+        <!-- 移动端菜单 -->
+        <div id="mobile-menu" class="hidden md:hidden bg-white border-t">
+            <div class="container mx-auto px-4 py-2 flex flex-col space-y-3">
+                <a href="#" class="text-gray-600 hover:text-primary py-2 transition-colors">首页</a>
+                <a href="#" class="text-gray-600 hover:text-primary py-2 transition-colors">关于</a>
+                <a href="#" class="text-gray-600 hover:text-primary py-2 transition-colors">帮助</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 主内容区 -->
+    <main class="container mx-auto px-4 pt-24 pb-16">
+        <!-- 消息提示框 -->
+        <div id="toast" class="fixed top-24 right-4 max-w-xs bg-dark text-white p-4 rounded-lg shadow-lg transform translate-x-full transition-transform duration-300 z-50 flex items-center">
+            <i id="toast-icon" class="fa fa-check-circle mr-2"></i>
+            <span id="toast-message"></span>
+        </div>
+
+        <!-- 首页 -->
+        <section id="home-page" class="min-h-[70vh] flex flex-col justify-center items-center text-center">
+            <div class="mb-12 animate-fade-in">
+                <h1 class="text-[clamp(2rem,5vw,4rem)] font-bold mb-4 text-shadow bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+                    高中毕业生去向追踪
+                </h1>
+                <p class="text-gray-600 text-lg md:text-xl max-w-2xl mx-auto">
+                    记录你的升学或就业去向，方便同学和老师了解彼此的发展道路
+                </p>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-3xl">
+                <!-- 登记卡片 -->
+                <div class="bg-white rounded-2xl shadow-xl p-8 card-hover border border-gray-100" id="register-card">
+                    <div class="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                        <i class="fa fa-pencil text-primary text-2xl"></i>
+                    </div>
+                    <h2 class="text-2xl font-bold mb-3">我要登记</h2>
+                    <p class="text-gray-600 mb-6">
+                        填写你的个人信息和毕业去向，设置查询问题和答案，方便他人了解你的情况
+                    </p>
+                    <button class="btn-primary w-full" id="go-register">
+                        开始登记 <i class="fa fa-arrow-right ml-2"></i>
+                    </button>
+                </div>
+                
+                <!-- 查询卡片 -->
+                <div class="bg-white rounded-2xl shadow-xl p-8 card-hover border border-gray-100" id="query-card">
+                    <div class="w-16 h-16 bg-secondary/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                        <i class="fa fa-search text-secondary text-2xl"></i>
+                    </div>
+                    <h2 class="text-2xl font-bold mb-3">我要查询</h2>
+                    <p class="text-gray-600 mb-6">
+                        输入同学姓名，回答他们设置的问题，即可查看他们的毕业去向
+                    </p>
+                    <button class="btn-secondary w-full" id="go-query">
+                        开始查询 <i class="fa fa-search ml-2"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="mt-16 max-w-2xl mx-auto bg-white/70 backdrop-blur-sm p-6 rounded-xl shadow-md">
+                <h3 class="text-xl font-semibold mb-3 flex items-center">
+                    <i class="fa fa-info-circle text-accent mr-2"></i> 关于本系统
+                </h3>
+                <p class="text-gray-600">
+                    本系统旨在帮助高中毕业生记录和查询彼此的升学或就业去向。所有数据均经过加密处理，
+                    只有正确回答设置的问题才能查看信息，保护你的隐私安全。
+                </p>
+            </div>
+        </section>
+
+        <!-- 登记页面 -->
+        <section id="register-page" class="hidden">
+            <div class="mb-8">
+                <button class="flex items-center text-gray-600 hover:text-primary mb-4" id="back-from-register">
+                    <i class="fa fa-arrow-left mr-2"></i> 返回首页
+                </button>
+                <h2 class="text-3xl font-bold mb-2">登记毕业去向</h2>
+                <p class="text-gray-600">请填写你的信息，方便他人了解你的去向</p>
+            </div>
+            
+            <div class="bg-white rounded-2xl shadow-lg p-6 md:p-8 max-w-3xl mx-auto">
+                <form id="register-form" class="space-y-6">
+                    <!-- 个人信息 -->
+                    <div class="border-b pb-6">
+                        <h3 class="text-xl font-semibold mb-4 flex items-center">
+                            <i class="fa fa-user text-primary mr-2"></i> 个人信息
+                        </h3>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label for="name" class="form-label">姓名 <span class="text-red-500">*</span></label>
+                                <input type="text" id="name" class="input-field" required placeholder="请输入你的姓名">
+                            </div>
+                            
+                            <div>
+                                <label for="highschool" class="form-label">毕业高中 <span class="text-red-500">*</span></label>
+                                <input type="text" id="highschool" class="input-field" required placeholder="请输入毕业高中名称">
+                            </div>
+                            
+                            <div>
+                                <label for="graduation-year" class="form-label">毕业年份 <span class="text-red-500">*</span></label>
+                                <input type="number" id="graduation-year" class="input-field" required placeholder="例如：2023">
+                            </div>
+                            
+                            <div>
+                                <label for="class" class="form-label">班级 (选填)</label>
+                                <input type="text" id="class" class="input-field" placeholder="例如：高三(1)班">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 去向信息 -->
+                    <div class="border-b pb-6">
+                        <h3 class="text-xl font-semibold mb-4 flex items-center">
+                            <i class="fa fa-map-marker text-primary mr-2"></i> 毕业去向
+                        </h3>
+                        
+                        <div class="space-y-4">
+                            <div>
+                                <label for="destination-type" class="form-label">去向类型 <span class="text-red-500">*</span></label>
+                                <select id="destination-type" class="input-field" required>
+                                    <option value="">请选择去向类型</option>
+                                    <option value="university">普通高校</option>
+                                    <option value="college">专科院校</option>
+                                    <option value="vocational">职业院校</option>
+                                    <option value="work">直接就业</option>
+                                    <option value="abroad">出国留学</option>
+                                    <option value="other">其他</option>
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <label for="destination" class="form-label">具体去向 <span class="text-red-500">*</span></label>
+                                <input type="text" id="destination" class="input-field" required placeholder="例如：北京大学 计算机科学与技术专业">
+                            </div>
+                            
+                            <div>
+                                <label for="description" class="form-label">补充说明 (选填)</label>
+                                <textarea id="description" class="input-field h-24" placeholder="可以分享一些你的感受或经验..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 查询验证 -->
+                    <div>
+                        <h3 class="text-xl font-semibold mb-4 flex items-center">
+                            <i class="fa fa-lock text-primary mr-2"></i> 查询验证设置
+                        </h3>
+                        
+                        <p class="text-gray-500 text-sm mb-4">
+                            设置一个问题和答案，他人需要正确回答才能查看你的信息
+                        </p>
+                        
+                        <div class="space-y-4">
+                            <div>
+                                <label for="security-question" class="form-label">验证问题 <span class="text-red-500">*</span></label>
+                                <input type="text" id="security-question" class="input-field" required placeholder="例如：我们班主任的名字是？">
+                            </div>
+                            
+                            <div>
+                                <label for="security-answer" class="form-label">问题答案 <span class="text-red-500">*</span></label>
+                                <input type="text" id="security-answer" class="input-field" required placeholder="请输入答案">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="pt-4">
+                        <button type="submit" class="btn-primary w-full md:w-auto">
+                            <i class="fa fa-save mr-2"></i> 提交登记
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </section>
+
+        <!-- 查询页面 -->
+        <section id="query-page" class="hidden">
+            <div class="mb-8">
+                <button class="flex items-center text-gray-600 hover:text-primary mb-4" id="back-from-query">
+                    <i class="fa fa-arrow-left mr-2"></i> 返回首页
+                </button>
+                <h2 class="text-3xl font-bold mb-2">查询毕业去向</h2>
+                <p class="text-gray-600">输入姓名，查询同学的毕业去向</p>
+            </div>
+            
+            <!-- 第一步：输入姓名 -->
+            <div id="query-step-1" class="bg-white rounded-2xl shadow-lg p-6 md:p-8 max-w-2xl mx-auto">
+                <form id="name-query-form" class="space-y-6">
+                    <div>
+                        <label for="query-name" class="form-label">请输入要查询的姓名 <span class="text-red-500">*</span></label>
+                        <input type="text" id="query-name" class="input-field" required placeholder="例如：张三">
+                    </div>
+                    
+                    <div>
+                        <label for="query-school" class="form-label">毕业高中 (可选，提高准确性)</label>
+                        <input type="text" id="query-school" class="input-field" placeholder="输入毕业高中可缩小查询范围">
+                    </div>
+                    
+                    <button type="submit" class="btn-secondary w-full">
+                        <i class="fa fa-search mr-2"></i> 查找
+                    </button>
+                </form>
+            </div>
+            
+            <!-- 第二步：选择匹配项（如果有多个结果） -->
+            <div id="query-step-2" class="hidden bg-white rounded-2xl shadow-lg p-6 md:p-8 max-w-2xl mx-auto">
+                <h3 class="text-xl font-semibold mb-4">找到以下匹配结果</h3>
+                <div id="matches-container" class="space-y-3 mb-6">
+                    <!-- 匹配结果将在这里动态生成 -->
+                </div>
+                <button class="text-gray-600 hover:text-primary" id="back-to-name">
+                    <i class="fa fa-arrow-left mr-1"></i> 重新输入姓名
+                </button>
+            </div>
+            
+            <!-- 第三步：回答问题 -->
+            <div id="query-step-3" class="hidden bg-white rounded-2xl shadow-lg p-6 md:p-8 max-w-2xl mx-auto">
+                <h3 class="text-xl font-semibold mb-4">请回答验证问题</h3>
+                <p class="text-gray-600 mb-6" id="security-question-display"></p>
+                
+                <form id="answer-form" class="space-y-6">
+                    <input type="hidden" id="selected-id">
+                    
+                    <div>
+                        <label for="security-answer-input" class="form-label">答案 <span class="text-red-500">*</span></label>
+                        <input type="text" id="security-answer-input" class="input-field" required placeholder="请输入答案">
+                    </div>
+                    
+                    <div class="flex space-x-4">
+                        <button type="submit" class="btn-secondary flex-1">
+                            <i class="fa fa-unlock mr-2"></i> 验证并查看
+                        </button>
+                        <button type="button" class="bg-gray-200 text-gray-700 font-medium py-2 px-6 rounded-lg hover:bg-gray-300 transition-all duration-300" id="back-to-matches">
+                            返回
+                        </button>
+                    </div>
+                </form>
+            </div>
+            
+            <!-- 第四步：显示结果 -->
+            <div id="query-step-4" class="hidden bg-white rounded-2xl shadow-lg p-6 md:p-8 max-w-2xl mx-auto">
+                <div class="flex justify-between items-start mb-6">
+                    <h3 class="text-xl font-semibold">查询结果</h3>
+                    <span class="text-sm text-gray-500">最后更新：<span id="last-updated"></span></span>
+                </div>
+                
+                <div id="result-container" class="space-y-6 mb-6">
+                    <!-- 结果将在这里动态生成 -->
+                </div>
+                
+                <button class="btn-primary w-full" id="new-query">
+                    <i class="fa fa-search mr-2"></i> 查询其他人
+                </button>
+            </div>
+        </section>
+
+        <!-- 关于页面 -->
+        <section id="about-page" class="hidden py-8">
+            <div class="mb-8">
+                <button class="flex items-center text-gray-600 hover:text-primary mb-4" id="back-from-about">
+                    <i class="fa fa-arrow-left mr-2"></i> 返回首页
+                </button>
+                <h2 class="text-3xl font-bold mb-2">关于本系统</h2>
+                <p class="text-gray-600">了解更多关于毕业生去向追踪系统的信息</p>
+            </div>
+            
+            <div class="bg-white rounded-2xl shadow-lg p-6 md:p-8 max-w-3xl mx-auto space-y-6">
+                <div>
+                    <h3 class="text-xl font-semibold mb-3 flex items-center">
+                        <i class="fa fa-info-circle text-primary mr-2"></i> 系统简介
+                    </h3>
+                    <p class="text-gray-600">
+                        毕业生去向追踪系统是一个为高中毕业生设计的信息交流平台，旨在帮助毕业生们
+                        记录和查询彼此的升学或就业情况。通过本系统，你可以方便地了解同学们的发展道路，
+                        建立更紧密的联系。
+                    </p>
+                </div>
+                
+                <div>
+                    <h3 class="text-xl font-semibold mb-3 flex items-center">
+                        <i class="fa fa-lock text-primary mr-2"></i> 隐私保护
+                    </h3>
+                    <p class="text-gray-600">
+                        我们非常重视用户的隐私保护。所有数据在存储前都会进行加密处理，只有正确回答
+                        你设置的验证问题才能查看你的信息。我们不会将你的信息用于任何其他目的，也不会
+                        向第三方分享你的数据。
+                    </p>
+                </div>
+                
+                <div>
+                    <h3 class="text-xl font-semibold mb-3 flex items-center">
+                        <i class="fa fa-question-circle text-primary mr-2"></i> 使用帮助
+                    </h3>
+                    <div class="space-y-4 text-gray-600">
+                        <div>
+                            <h4 class="font-medium">如何登记我的信息？</h4>
+                            <p>在首页点击"我要登记"，填写个人信息、毕业去向，并设置一个验证问题和答案，提交即可。</p>
+                        </div>
+                        <div>
+                            <h4 class="font-medium">如何查询他人信息？</h4>
+                            <p>在首页点击"我要查询"，输入要查询的姓名，找到匹配的人后，回答他们设置的验证问题，即可查看信息。</p>
+                        </div>
+                        <div>
+                            <h4 class="font-medium">可以修改已登记的信息吗？</h4>
+                            <p>目前系统暂不支持修改功能，如有需要，请重新登记（会覆盖原有信息）。</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 帮助页面 -->
+        <section id="help-page" class="hidden py-8">
+            <div class="mb-8">
+                <button class="flex items-center text-gray-600 hover:text-primary mb-4" id="back-from-help">
+                    <i class="fa fa-arrow-left mr-2"></i> 返回首页
+                </button>
+                <h2 class="text-3xl font-bold mb-2">使用帮助</h2>
+                <p class="text-gray-600">常见问题解答</p>
+            </div>
+            
+            <div class="bg-white rounded-2xl shadow-lg p-6 md:p-8 max-w-3xl mx-auto">
+                <div class="space-y-6">
+                    <div class="border-b pb-4">
+                        <h3 class="text-lg font-semibold mb-2">如何登记我的毕业去向？</h3>
+                        <p class="text-gray-600">
+                            在首页点击"我要登记"按钮，填写个人信息（姓名、毕业高中等）、毕业去向（学校或工作单位），
+                            并设置一个验证问题和答案。填写完成后点击"提交登记"即可。
+                        </p>
+                    </div>
+                    
+                    <div class="border-b pb-4">
+                        <h3 class="text-lg font-semibold mb-2">如何查询同学的毕业去向？</h3>
+                        <p class="text-gray-600">
+                            在首页点击"我要查询"按钮，输入要查询的同学姓名，如果记得毕业高中也可以一并输入以提高准确性。
+                            系统会显示匹配的结果，选择你要查询的人，回答他们设置的验证问题，验证通过后即可查看信息。
+                        </p>
+                    </div>
+                    
+                    <div class="border-b pb-4">
+                        <h3 class="text-lg font-semibold mb-2">我的信息安全吗？</h3>
+                        <p class="text-gray-600">
+                            非常安全。所有信息在存储前都会进行加密处理，只有正确回答你设置的验证问题的人才能查看你的信息。
+                            我们不会将你的信息用于其他任何目的。
+                        </p>
+                    </div>
+                    
+                    <div class="border-b pb-4">
+                        <h3 class="text-lg font-semibold mb-2">可以修改已经提交的信息吗？</h3>
+                        <p class="text-gray-600">
+                            目前系统支持重新提交来覆盖原有信息。你只需使用相同的姓名和毕业高中重新登记，新的信息将会
+                            替换掉原来的信息。
+                        </p>
+                    </div>
+                    
+                    <div>
+                        <h3 class="text-lg font-semibold mb-2">遇到问题如何反馈？</h3>
+                        <p class="text-gray-600">
+                            如果你在使用过程中遇到任何问题或有改进建议，可以通过页面底部的联系方式与我们取得联系。
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- 页脚 -->
+    <footer class="bg-dark text-white py-12">
+        <div class="container mx-auto px-4">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div>
+                    <div class="flex items-center space-x-2 mb-4">
+                        <i class="fa fa-graduation-cap text-primary text-2xl"></i>
+                        <span class="text-xl font-bold">毕业生去向追踪</span>
+                    </div>
+                    <p class="text-gray-400 mb-4">
+                        连接高中毕业生，记录彼此的成长轨迹，共同见证美好未来。
+                    </p>
+                    <div class="flex space-x-4">
+                        <a href="#" class="text-gray-400 hover:text-primary transition-colors">
+                            <i class="fa fa-weixin text-xl"></i>
+                        </a>
+                        <a href="#" class="text-gray-400 hover:text-primary transition-colors">
+                            <i class="fa fa-weibo text-xl"></i>
+                        </a>
+                        <a href="#" class="text-gray-400 hover:text-primary transition-colors">
+                            <i class="fa fa-github text-xl"></i>
+                        </a>
+                    </div>
+                </div>
+                
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">快速链接</h3>
+                    <ul class="space-y-2">
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors" id="footer-home">首页</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors" id="footer-about">关于我们</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors" id="footer-help">使用帮助</a></li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">联系我们</h3>
+                    <ul class="space-y-2 text-gray-400">
+                        <li class="flex items-center">
+                            <i class="fa fa-envelope mr-2"></i>
+                            <span>contact@example.com</span>
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fa fa-phone mr-2"></i>
+                            <span>123-4567-8910</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="border-t border-gray-800 mt-8 pt-8 text-center text-gray-500 text-sm">
+                <p>&copy; 2023 毕业生去向追踪系统 版权所有</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Firebase配置 - 请替换为您自己的Firebase项目配置
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_AUTH_DOMAIN",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_STORAGE_BUCKET",
+            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
+
+        // 初始化Firebase
+        const app = firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore(app);
+        
+        // 加密密钥 - 实际应用中应使用更安全的密钥管理方式
+        const encryptionKey = CryptoJS.enc.Utf8.parse('graduateTrackerKey123');
+        const iv = CryptoJS.enc.Utf8.parse('1234567890abcdef');
+
+        // DOM元素
+        const pages = {
+            home: document.getElementById('home-page'),
+            register: document.getElementById('register-page'),
+            query: document.getElementById('query-page'),
+            about: document.getElementById('about-page'),
+            help: document.getElementById('help-page')
+        };
+        
+        const querySteps = {
+            step1: document.getElementById('query-step-1'),
+            step2: document.getElementById('query-step-2'),
+            step3: document.getElementById('query-step-3'),
+            step4: document.getElementById('query-step-4')
+        };
+
+        // 显示提示消息
+        function showToast(message, isSuccess = true) {
+            const toast = document.getElementById('toast');
+            const toastMessage = document.getElementById('toast-message');
+            const toastIcon = document.getElementById('toast-icon');
+            
+            toastMessage.textContent = message;
+            toastIcon.className = isSuccess ? 'fa fa-check-circle mr-2 text-green-400' : 'fa fa-exclamation-circle mr-2 text-red-400';
+            
+            toast.classList.remove('translate-x-full');
+            
+            setTimeout(() => {
+                toast.classList.add('translate-x-full');
+            }, 3000);
+        }
+
+        // 加密数据
+        function encryptData(data) {
+            return CryptoJS.AES.encrypt(JSON.stringify(data), encryptionKey, { 
+                iv: iv,
+                mode: CryptoJS.mode.CBC,
+                padding: CryptoJS.pad.Pkcs7
+            }).toString();
+        }
+
+        // 解密数据
+        function decryptData(encryptedData) {
+            try {
+                const bytes = CryptoJS.AES.decrypt(encryptedData, encryptionKey, { 
+                    iv: iv,
+                    mode: CryptoJS.mode.CBC,
+                    padding: CryptoJS.pad.Pkcs7
+                });
+                return JSON.parse(bytes.toString(CryptoJS.enc.Utf8));
+            } catch (e) {
+                console.error('解密失败:', e);
+                return null;
+            }
+        }
+
+        // 切换页面
+        function showPage(pageName) {
+            Object.keys(pages).forEach(key => {
+                pages[key].classList.add('hidden');
+            });
+            pages[pageName].classList.remove('hidden');
+        }
+
+        // 切换查询步骤
+        function showQueryStep(stepNumber) {
+            Object.values(querySteps).forEach(step => {
+                step.classList.add('hidden');
+            });
+            querySteps[`step${stepNumber}`].classList.remove('hidden');
+        }
+
+        // 页面导航事件监听
+        document.getElementById('go-register').addEventListener('click', () => {
+            showPage('register');
+            window.scrollTo(0, 0);
+        });
+
+        document.getElementById('go-query').addEventListener('click', () => {
+            showPage('query');
+            showQueryStep(1);
+            window.scrollTo(0, 0);
+        });
+
+        document.getElementById('back-from-register').addEventListener('click', () => {
+            showPage('home');
+        });
+
+        document.getElementById('back-from-query').addEventListener('click', () => {
+            showPage('home');
+        });
+
+        document.getElementById('back-from-about').addEventListener('click', () => {
+            showPage('home');
+        });
+
+        document.getElementById('back-from-help').addEventListener('click', () => {
+            showPage('home');
+        });
+
+        document.getElementById('nav-home').addEventListener('click', (e) => {
+            e.preventDefault();
+            showPage('home');
+        });
+
+        document.getElementById('nav-about').addEventListener('click', (e) => {
+            e.preventDefault();
+            showPage('about');
+        });
+
+        document.getElementById('nav-help').addEventListener('click', (e) => {
+            e.preventDefault();
+            showPage('help');
+        });
+
+        document.getElementById('footer-home').addEventListener('click', (e) => {
+            e.preventDefault();
+            showPage('home');
+        });
+
+        document.getElementById('footer-about').addEventListener('click', (e) => {
+            e.preventDefault();
+            showPage('about');
+        });
+
+        document.getElementById('footer-help').addEventListener('click', (e) => {
+            e.preventDefault();
+            showPage('help');
+        });
+
+        // 移动端菜单
+        document.getElementById('mobile-menu-button').addEventListener('click', () => {
+            const mobileMenu = document.getElementById('mobile-menu');
+            mobileMenu.classList.toggle('hidden');
+        });
+
+        // 登记表单提交
+        document.getElementById('register-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            // 获取表单数据
+            const formData = {
+                name: document.getElementById('name').value.trim(),
+                highschool: document.getElementById('highschool').value.trim(),
+                graduationYear: document.getElementById('graduation-year').value.trim(),
+                className: document.getElementById('class').value.trim(),
+                destinationType: document.getElementById('destination-type').value,
+                destination: document.getElementById('destination').value.trim(),
+                description: document.getElementById('description').value.trim(),
+                securityQuestion: document.getElementById('security-question').value.trim(),
+                securityAnswer: document.getElementById('security-answer').value.trim().toLowerCase(),
+                createdAt: new Date().toISOString()
+            };
+            
+            // 简单验证
+            if (!formData.name || !formData.highschool || !formData.graduationYear || 
+                !formData.destinationType || !formData.destination || 
+                !formData.securityQuestion || !formData.securityAnswer) {
+                showToast('请填写所有必填字段', false);
+                return;
+            }
+            
+            try {
+                // 加密敏感数据
+                const encryptedData = {
+                    ...formData,
+                    securityQuestion: encryptData(formData.securityQuestion),
+                    securityAnswer: encryptData(formData.securityAnswer),
+                    destination: encryptData(formData.destination),
+                    description: encryptData(formData.description)
+                };
+                
+                // 检查是否已有相同记录（同名同校）
+                const existingRecords = await db.collection('graduates')
+                    .where('name', '==', formData.name)
+                    .where('highschool', '==', formData.highschool)
+                    .get();
+                
+                if (!existingRecords.empty) {
+                    // 更新现有记录
+                    const docId = existingRecords.docs[0].id;
+                    await db.collection('graduates').doc(docId).set(encryptedData);
+                    showToast('信息更新成功！');
+                } else {
+                    // 创建新记录
+                    await db.collection('graduates').add(encryptedData);
+                    showToast('登记成功！');
+                }
+                
+                // 重置表单并返回首页
+                document.getElementById('register-form').reset();
+                setTimeout(() => {
+                    showPage('home');
+                }, 1500);
+                
+            } catch (error) {
+                console.error('登记失败:', error);
+                showToast('登记失败，请稍后再试', false);
+            }
+        });
+
+        // 姓名查询表单提交
+        document.getElementById('name-query-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const queryName = document.getElementById('query-name').value.trim();
+            const querySchool = document.getElementById('query-school').value.trim();
+            
+            if (!queryName) {
+                showToast('请输入要查询的姓名', false);
+                return;
+            }
+            
+            try {
+                // 查询数据库
+                let query = db.collection('graduates').where('name', '==', queryName);
+                
+                // 如果提供了学校信息，缩小查询范围
+                if (querySchool) {
+                    query = query.where('highschool', '==', querySchool);
+                }
+                
+                const snapshot = await query.get();
+                
+                if (snapshot.empty) {
+                    showToast('未找到匹配的记录', false);
+                    return;
+                }
+                
+                // 显示匹配结果
+                const matchesContainer = document.getElementById('matches-container');
+                matchesContainer.innerHTML = '';
+                
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    const matchItem = document.createElement('div');
+                    matchItem.className = 'p-4 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors';
+                    matchItem.innerHTML = `
+                        <div class="font-medium">${data.name}</div>
+                        <div class="text-sm text-gray-500">${data.highschool} ${data.graduationYear}届 ${data.className || ''}</div>
+                    `;
+                    
+                    matchItem.addEventListener('click', () => {
+                        // 存储选中的ID并显示安全问题
+                        document.getElementById('selected-id').value = doc.id;
+                        
+                        // 解密并显示安全问题
+                        const decryptedQuestion = decryptData(data.securityQuestion);
+                        document.getElementById('security-question-display').textContent = decryptedQuestion;
+                        
+                        showQueryStep(3);
+                    });
+                    
+                    matchesContainer.appendChild(matchItem);
+                });
+                
+                showQueryStep(2);
+                
+            } catch (error) {
+                console.error('查询失败:', error);
+                showToast('查询失败，请稍后再试', false);
+            }
+        });
+
+        // 回答验证问题表单提交
+        document.getElementById('answer-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const selectedId = document.getElementById('selected-id').value;
+            const userAnswer = document.getElementById('security-answer-input').value.trim().toLowerCase();
+            
+            if (!selectedId || !userAnswer) {
+                showToast('请填写答案', false);
+                return;
+            }
+            
+            try {
+                // 获取记录
+                const doc = await db.collection('graduates').doc(selectedId).get();
+                if (!doc.exists) {
+                    showToast('记录不存在', false);
+                    return;
+                }
+                
+                const data = doc.data();
+                
+                // 验证答案
+                const decryptedAnswer = decryptData(data.securityAnswer);
+                
+                if (userAnswer !== decryptedAnswer) {
+                    showToast('答案不正确', false);
+                    return;
+                }
+                
+                // 答案正确，显示结果
+                const resultContainer = document.getElementById('result-container');
+                
+                // 解密需要显示的数据
+                const decryptedDestination = decryptData(data.destination);
+                const decryptedDescription = decryptData(data.description);
+                
+                // 格式化日期
+                const formattedDate = new Date(data.createdAt).toLocaleDateString('zh-CN');
+                
+                // 更新结果容器
+                resultContainer.innerHTML = `
+                    <div class="border-b pb-4">
+                        <h4 class="text-lg font-semibold mb-2">个人信息</h4>
+                        <div class="grid grid-cols-2 gap-2 text-gray-600">
+                            <div><span class="font-medium text-gray-800">姓名：</span>${data.name}</div>
+                            <div><span class="font-medium text-gray-800">毕业高中：</span>${data.highschool}</div>
+                            <div><span class="font-medium text-gray-800">毕业年份：</span>${data.graduationYear}</div>
+                            <div><span class="font-medium text-gray-800">班级：</span>${data.className || '未填写'}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="border-b pb-4">
+                        <h4 class="text-lg font-semibold mb-2">毕业去向</h4>
+                        <div class="text-gray-600 space-y-2">
+                            <div>
+                                <span class="font-medium text-gray-800">去向类型：</span>
+                                ${getDestinationTypeName(data.destinationType)}
+                            </div>
+                            <div>
+                                <span class="font-medium text-gray-800">具体去向：</span>
+                                ${decryptedDestination}
+                            </div>
+                            ${decryptedDescription ? `
+                                <div>
+                                    <span class="font-medium text-gray-800">补充说明：</span>
+                                    ${decryptedDescription}
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+                
+                // 更新最后更新时间
+                document.getElementById('last-updated').textContent = formattedDate;
+                
+                // 显示结果页面
+                showQueryStep(4);
+                
+                // 重置答案输入
+                document.getElementById('security-answer-input').value = '';
+                
+            } catch (error) {
+                console.error('验证失败:', error);
+                showToast('验证失败，请稍后再试', false);
+            }
+        });
+
+        // 查询步骤导航
+        document.getElementById('back-to-name').addEventListener('click', () => {
+            showQueryStep(1);
+        });
+
+        document.getElementById('back-to-matches').addEventListener('click', () => {
+            showQueryStep(2);
+        });
+
+        document.getElementById('new-query').addEventListener('click', () => {
+            document.getElementById('name-query-form').reset();
+            showQueryStep(1);
+        });
+
+        // 辅助函数：获取去向类型的中文名称
+        function getDestinationTypeName(type) {
+            const types = {
+                'university': '普通高校',
+                'college': '专科院校',
+                'vocational': '职业院校',
+                'work': '直接就业',
+                'abroad': '出国留学',
+                'other': '其他'
+            };
+            return types[type] || type;
+        }
+
+        // 页面加载时显示首页
+        window.addEventListener('load', () => {
+            showPage('home');
+            
+            // 添加页面加载动画
+            document.body.classList.add('opacity-100');
+            document.body.classList.remove('opacity-0');
+        });
+
+        // 滚动时改变导航栏样式
+        window.addEventListener('scroll', () => {
+            const nav = document.querySelector('nav');
+            if (window.scrollY > 50) {
+                nav.classList.add('py-2', 'shadow');
+                nav.classList.remove('py-3');
+            } else {
+                nav.classList.add('py-3');
+                nav.classList.remove('py-2', 'shadow');
+            }
+        });
+    </script>
+</body>
+</html>
