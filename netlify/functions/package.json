@@ -1,7 +1,0 @@
-{
-  "dependencies": {
-    "pg": "^8.11.3",
-    "crypto-js": "^4.1.1"
-  }
-}
-cd netlify/functions && npm install
