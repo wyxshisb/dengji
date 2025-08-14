@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>高中毕业生去向登记与查询系统</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 800px;
+            background: rgba(255, 255, 255, 0.92);
+            border-radius: 20px;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.25);
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .header {
+            background: linear-gradient(90deg, #4b6cb7 0%, #182848 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+            position: relative;
+        }
+        
+        .logo {
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: center;
+        }
+        
+        h1 {
+            font-size: 2.2rem;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+        
+        .content {
+            padding: 30px;
+        }
+        
+        .home-screen {
+            text-align: center;
+        }
+        
+        .home-screen h2 {
+            color: #2c3e50;
+            margin-bottom: 30px;
+            font-size: 1.8rem;
+        }
+        
+        .options {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 30px;
+            margin: 40px 0;
+        }
+        
+        .option-card {
+            width: 280px;
+            background: white;
+            border-radius: 15px;
+            padding: 30px 25px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+            text-align: center;
+        }
+        
+        .option-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
+            border-color: #4b6cb7;
+        }
+        
+        .option-card i {
+            font-size: 3.5rem;
+            margin-bottom: 20px;
+            color: #4b6cb7;
+        }
+        
+        .option-card h3 {
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+            color: #2c3e50;
+        }
+        
+        .option-card p {
+            color: #7f8c8d;
+            line-height: 1.6;
+        }
+        
+        .form-container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        .form-section {
+            margin-bottom: 30px;
+        }
+        
+        .form-section h3 {
+            font-size: 1.4rem;
+            color: #2c3e50;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #ecf0f1;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        
+        input, select, textarea {
+            width: 100%;
+            padding: 14px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+        
+        input:focus, select:focus, textarea:focus {
+            border-color: #4b6cb7;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(75, 108, 183, 0.2);
+        }
+        
+        .btn {
+            display: inline-block;
+            background: linear-gradient(90deg, #4b6cb7 0%, #182848 100%);
+            color: white;
+            border: none;
+            padding: 14px 30px;
+            font-size: 1.1rem;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            text-align: center;
+            margin-top: 10px;
+        }
+        
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 7px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        .btn-secondary {
+            background: #95a5a6;
+        }
+        
+        .btn-container {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 30px;
+        }
+        
+        .result-container {
+            text-align: center;
+            padding: 30px;
+            background: #f8f9fa;
+            border-radius: 15px;
+            margin-top: 20px;
+            display: none;
+        }
+        
+        .result-container h3 {
+            font-size: 1.6rem;
+            color: #2c3e50;
+            margin-bottom: 20px;
+        }
+        
+        .user-info {
+            background: white;
+            border-radius: 10px;
+            padding: 25px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            text-align: left;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+        
+        .info-item {
+            display: flex;
+            margin-bottom: 15px;
+        }
+        
+        .info-label {
+            font-weight: 600;
+            width: 120px;
+            color: #2c3e50;
+        }
+        
+        .info-value {
+            flex: 1;
+            color: #34495e;
+        }
+        
+        .security-question {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            display: none;
+        }
+        
+        .back-btn {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .back-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+        
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 25px;
+            border-radius: 10px;
+            color: white;
+            font-weight: 500;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            transform: translateX(120%);
+            transition: transform 0.3s ease;
+            z-index: 1000;
+        }
+        
+        .notification.show {
+            transform: translateX(0);
+        }
+        
+        .notification.success {
+            background: #27ae60;
+        }
+        
+        .notification.error {
+            background: #e74c3c;
+        }
+        
+        .notification.info {
+            background: #3498db;
+        }
+        
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: #7f8c8d;
+            font-size: 0.9rem;
+            border-top: 1px solid #ecf0f1;
+        }
+        
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .options {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .option-card {
+                width: 100%;
+                max-width: 350px;
+            }
+            
+            .header {
+                padding: 20px;
+            }
+            
+            h1 {
+                font-size: 1.8rem;
+            }
+            
+            .btn-container {
+                flex-direction: column;
+            }
+            
+            .btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <button class="back-btn" id="backButton" style="display: none;">
+                <i class="fas fa-arrow-left"></i>
+            </button>
+            <div class="logo">
+                <i class="fas fa-graduation-cap"></i>
+            </div>
+            <h1>高中毕业生去向登记与查询系统</h1>
+            <p class="subtitle">记录青春足迹，延续同窗情谊</p>
+        </div>
+        
+        <div class="content">
+            <!-- 首页 -->
+            <div class="home-screen" id="homeScreen">
+                <h2>请选择您需要的服务</h2>
+                <div class="options">
+                    <div class="option-card" id="registerOption">
+                        <i class="fas fa-user-edit"></i>
+                        <h3>我要登记</h3>
+                        <p>登记您的毕业去向信息，并设置安全问题和答案，方便同学查询</p>
+                    </div>
+                    <div class="option-card" id="queryOption">
+                        <i class="fas fa-search"></i>
+                        <h3>我要查询</h3>
+                        <p>查询同学的毕业去向信息，需要回答对方设置的安全问题</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 登记表单 -->
+            <div class="form-container" id="registerForm" style="display: none;">
+                <div class="form-section">
+                    <h3><i class="fas fa-user-circle"></i> 基本信息</h3>
+                    <div class="form-group">
+                        <label for="name">姓名</label>
+                        <input type="text" id="name" placeholder="请输入您的姓名">
+                    </div>
+                    <div class="form-group">
+                        <label for="phone">联系电话</label>
+                        <input type="tel" id="phone" placeholder="请输入您的联系电话">
+                    </div>
+                    <div class="form-group">
+                        <label for="email">电子邮箱</label>
+                        <input type="email" id="email" placeholder="请输入您的电子邮箱">
+                    </div>
+                </div>
+                
+                <div class="form-section">
+                    <h3><i class="fas fa-map-marker-alt"></i> 毕业去向</h3>
+                    <div class="form-group">
+                        <label for="destinationType">去向类型</label>
+                        <select id="destinationType">
+                            <option value="">请选择去向类型</option>
+                            <option value="university">国内大学</option>
+                            <option value="overseas">国外留学</option>
+                            <option value="employment">直接就业</option>
+                            <option value="gap">间隔年</option>
+                            <option value="other">其他</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="destinationDetail">去向详情</label>
+                        <input type="text" id="destinationDetail" placeholder="例如：清华大学计算机系 / 美国加州大学伯克利分校 / 腾讯公司">
+                    </div>
+                    <div class="form-group">
+                        <label for="message">留言</label>
+                        <textarea id="message" rows="3" placeholder="给同学们留句话吧..."></textarea>
+                    </div>
+                </div>
+                
+                <div class="form-section">
+                    <h3><i class="fas fa-lock"></i> 安全设置</h3>
+                    <div class="form-group">
+                        <label for="securityQuestion">安全问题</label>
+                        <input type="text" id="securityQuestion" placeholder="例如：我高中最好的朋友是谁？">
+                    </div>
+                    <div class="form-group">
+                        <label for="securityAnswer">问题答案</label>
+                        <input type="text" id="securityAnswer" placeholder="请输入问题答案">
+                    </div>
+                </div>
+                
+                <div class="btn-container">
+                    <button class="btn" id="submitRegister">提交登记</button>
+                    <button class="btn btn-secondary" id="cancelRegister">取消</button>
+                </div>
+            </div>
+            
+            <!-- 查询页面 -->
+            <div class="form-container" id="queryForm" style="display: none;">
+                <div class="form-section">
+                    <h3><i class="fas fa-search"></i> 查询同学去向</h3>
+                    <div class="form-group">
+                        <label for="queryName">同学姓名</label>
+                        <input type="text" id="queryName" placeholder="请输入您要查询的同学姓名">
+                    </div>
+                    <button class="btn" id="searchBtn">查询</button>
+                </div>
+                
+                <div class="security-question" id="securityQuestionSection">
+                    <h3>安全问题验证</h3>
+                    <p id="displayQuestion"></p>
+                    <div class="form-group">
+                        <label for="userAnswer">您的答案</label>
+                        <input type="text" id="userAnswer" placeholder="请输入答案">
+                    </div>
+                    <button class="btn" id="submitAnswer">提交验证</button>
+                </div>
+                
+                <div class="result-container" id="queryResult">
+                    <h3><i class="fas fa-user-graduate"></i> 同学去向信息</h3>
+                    <div class="user-info" id="userInfo">
+                        <!-- 用户信息将在这里显示 -->
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>© 2023 高中毕业生去向登记与查询系统 | 保护隐私安全，延续同窗情谊</p>
+        </div>
+    </div>
+    
+    <div class="notification" id="notification"></div>
+    
+    <script>
+        // 页面元素
+        const homeScreen = document.getElementById('homeScreen');
+        const registerForm = document.getElementById('registerForm');
+        const queryForm = document.getElementById('queryForm');
+        const registerOption = document.getElementById('registerOption');
+        const queryOption = document.getElementById('queryOption');
+        const backButton = document.getElementById('backButton');
+        const cancelRegister = document.getElementById('cancelRegister');
+        const submitRegister = document.getElementById('submitRegister');
+        const searchBtn = document.getElementById('searchBtn');
+        const submitAnswer = document.getElementById('submitAnswer');
+        const securityQuestionSection = document.getElementById('securityQuestionSection');
+        const queryResult = document.getElementById('queryResult');
+        const notification = document.getElementById('notification');
+        
+        // 模拟数据库存储
+        let graduates = JSON.parse(localStorage.getItem('graduates')) || [];
+        
+        // 显示通知
+        function showNotification(message, type) {
+            notification.textContent = message;
+            notification.className = `notification ${type} show`;
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+        
+        // 返回首页
+        function goToHome() {
+            homeScreen.style.display = 'block';
+            registerForm.style.display = 'none';
+            queryForm.style.display = 'none';
+            backButton.style.display = 'none';
+            securityQuestionSection.style.display = 'none';
+            queryResult.style.display = 'none';
+            document.getElementById('queryName').value = '';
+        }
+        
+        // 事件监听
+        registerOption.addEventListener('click', () => {
+            homeScreen.style.display = 'none';
+            registerForm.style.display = 'block';
+            backButton.style.display = 'block';
+        });
+        
+        queryOption.addEventListener('click', () => {
+            homeScreen.style.display = 'none';
+            queryForm.style.display = 'block';
+            backButton.style.display = 'block';
+            securityQuestionSection.style.display = 'none';
+            queryResult.style.display = 'none';
+        });
+        
+        backButton.addEventListener('click', goToHome);
+        cancelRegister.addEventListener('click', goToHome);
+        
+        // 提交登记
+        submitRegister.addEventListener('click', () => {
+            const name = document.getElementById('name').value;
+            const phone = document.getElementById('phone').value;
+            const email = document.getElementById('email').value;
+            const destinationType = document.getElementById('destinationType').value;
+            const destinationDetail = document.getElementById('destinationDetail').value;
+            const message = document.getElementById('message').value;
+            const securityQuestion = document.getElementById('securityQuestion').value;
+            const securityAnswer = document.getElementById('securityAnswer').value;
+            
+            if (!name || !phone || !destinationType || !destinationDetail || !securityQuestion || !securityAnswer) {
+                showNotification('请填写所有必填字段！', 'error');
+                return;
+            }
+            
+            // 添加到模拟数据库
+            graduates.push({
+                id: Date.now(),
+                name,
+                phone,
+                email,
+                destinationType,
+                destinationDetail,
+                message,
+                securityQuestion,
+                securityAnswer
+            });
+            
+            // 保存到localStorage
+            localStorage.setItem('graduates', JSON.stringify(graduates));
+            
+            // 清空表单
+            document.getElementById('registerForm').reset();
+            
+            showNotification('登记成功！您的信息已保存。', 'success');
+            
+            // 返回首页
+            setTimeout(goToHome, 1500);
+        });
+        
+        // 查询同学
+        searchBtn.addEventListener('click', () => {
+            const queryName = document.getElementById('queryName').value.trim();
+            
+            if (!queryName) {
+                showNotification('请输入同学姓名！', 'error');
+                return;
+            }
+            
+            // 在模拟数据库中查找
+            const graduate = graduates.find(g => g.name === queryName);
+            
+            if (!graduate) {
+                showNotification('该同学未登记信息，或姓名输入有误。', 'error');
+                securityQuestionSection.style.display = 'none';
+                queryResult.style.display = 'none';
+                return;
+            }
+            
+            // 显示安全问题
+            document.getElementById('displayQuestion').textContent = graduate.securityQuestion;
+            securityQuestionSection.style.display = 'block';
+            queryResult.style.display = 'none';
+            
+            // 设置当前查询的用户
+            submitAnswer.dataset.userId = graduate.id;
+        });
+        
+        // 提交安全答案
+        submitAnswer.addEventListener('click', () => {
+            const userAnswer = document.getElementById('userAnswer').value.trim();
+            const userId = submitAnswer.dataset.userId;
+            
+            if (!userAnswer) {
+                showNotification('请输入答案！', 'error');
+                return;
+            }
+            
+            // 在模拟数据库中查找
+            const graduate = graduates.find(g => g.id == userId);
+            
+            if (!graduate) {
+                showNotification('用户信息不存在！', 'error');
+                return;
+            }
+            
+            if (userAnswer !== graduate.securityAnswer) {
+                showNotification('答案错误，请重新输入！', 'error');
+                return;
+            }
+            
+            // 显示用户信息
+            const userInfo = document.getElementById('userInfo');
+            userInfo.innerHTML = `
+                <div class="info-item">
+                    <div class="info-label">姓名：</div>
+                    <div class="info-value">${graduate.name}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">去向类型：</div>
+                    <div class="info-value">${getDestinationType(graduate.destinationType)}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">去向详情：</div>
+                    <div class="info-value">${graduate.destinationDetail}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">联系方式：</div>
+                    <div class="info-value">${graduate.phone}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">电子邮箱：</div>
+                    <div class="info-value">${graduate.email || '未提供'}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">留言：</div>
+                    <div class="info-value">${graduate.message || '暂无留言'}</div>
+                </div>
+            `;
+            
+            queryResult.style.display = 'block';
+            document.getElementById('userAnswer').value = '';
+        });
+        
+        // 获取去向类型中文
+        function getDestinationType(type) {
+            const types = {
+                'university': '国内大学',
+                'overseas': '国外留学',
+                'employment': '直接就业',
+                'gap': '间隔年',
+                'other': '其他'
+            };
+            return types[type] || '未知';
+        }
+    </script>
+</body>
+</html>
